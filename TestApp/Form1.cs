@@ -228,7 +228,7 @@ namespace TestApp
                 // update progress bar 
                 var max_progress = unpackFiles.Count * 3;
                 var cur_progress = 0;
-                
+                /*
                 // uncompress 
                 Log("Decompressing packed files.");
                 
@@ -299,7 +299,7 @@ namespace TestApp
                         continue; 
                     }
                 }
-                
+                */
                 // possibly keep for reference 
                 // note: unless deleted it will get put into the ISO
                 var keepOldArchives = KeepOldArchivesCheckBox.Checked;
@@ -981,7 +981,7 @@ namespace TestApp
                     Log(error.StackTrace);
                     Log(error.Message);
 
-                    Log("ERROR! Failed to patch.");
+                    Log("ERROR! Failed to patch. Maybe source.iso is read-only?");
                 }
 
                 // run on main thread 

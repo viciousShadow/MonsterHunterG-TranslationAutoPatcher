@@ -13,7 +13,7 @@ To get the patchfile, navigate to the Google Doc (PatchFile tab) -> File -> Down
 The patcher comes with one, but it's probably already out of date, so I highly recommend downloading another .csv from the Google Doc.
 
 ### Compile Requirements
-  - Visual Studio 2017 with .NET desktop development checked on during installation (or go to Tools -> Get Tools and Features)
+  - Visual Studio Community 2017 with .NET desktop development checked on during installation (or go to Tools -> Get Tools and Features)
   - Just open the .sln and hit Build!
 
 ### PatchFile Format

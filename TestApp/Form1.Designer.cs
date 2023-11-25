@@ -56,7 +56,7 @@
             // 
             this.SelectFolderButton.Location = new System.Drawing.Point(14, 12);
             this.SelectFolderButton.Name = "SelectFolderButton";
-            this.SelectFolderButton.Size = new System.Drawing.Size(145, 57);
+            this.SelectFolderButton.Size = new System.Drawing.Size(142, 57);
             this.SelectFolderButton.TabIndex = 0;
             this.SelectFolderButton.Text = "Select Input ISO";
             this.SelectFolderButton.UseVisualStyleBackColor = true;
@@ -78,15 +78,15 @@
             // 
             this.SelectISOText.Location = new System.Drawing.Point(14, 75);
             this.SelectISOText.Name = "SelectISOText";
-            this.SelectISOText.Size = new System.Drawing.Size(145, 20);
+            this.SelectISOText.Size = new System.Drawing.Size(142, 20);
             this.SelectISOText.TabIndex = 2;
             this.SelectISOText.TextChanged += new System.EventHandler(this.SelectFolderText_TextChanged);
             // 
             // OutputFileButton
             // 
-            this.OutputFileButton.Location = new System.Drawing.Point(162, 12);
+            this.OutputFileButton.Location = new System.Drawing.Point(164, 12);
             this.OutputFileButton.Name = "OutputFileButton";
-            this.OutputFileButton.Size = new System.Drawing.Size(144, 57);
+            this.OutputFileButton.Size = new System.Drawing.Size(142, 57);
             this.OutputFileButton.TabIndex = 3;
             this.OutputFileButton.Text = "Select Output ISO";
             this.OutputFileButton.UseVisualStyleBackColor = true;
@@ -98,18 +98,18 @@
             // 
             // OutputFileText
             // 
-            this.OutputFileText.Location = new System.Drawing.Point(162, 75);
+            this.OutputFileText.Location = new System.Drawing.Point(164, 75);
             this.OutputFileText.Name = "OutputFileText";
-            this.OutputFileText.Size = new System.Drawing.Size(144, 20);
+            this.OutputFileText.Size = new System.Drawing.Size(142, 20);
             this.OutputFileText.TabIndex = 4;
             // 
             // ApplyPatchButton
             // 
             this.ApplyPatchButton.AutoSize = true;
             this.ApplyPatchButton.Enabled = false;
-            this.ApplyPatchButton.Location = new System.Drawing.Point(12, 203);
+            this.ApplyPatchButton.Location = new System.Drawing.Point(12, 219);
             this.ApplyPatchButton.Name = "ApplyPatchButton";
-            this.ApplyPatchButton.Size = new System.Drawing.Size(193, 125);
+            this.ApplyPatchButton.Size = new System.Drawing.Size(144, 109);
             this.ApplyPatchButton.TabIndex = 5;
             this.ApplyPatchButton.Text = "PATCH";
             this.ApplyPatchButton.UseVisualStyleBackColor = true;
@@ -193,7 +193,7 @@
             // CleanupCheckbox
             // 
             this.CleanupCheckbox.AutoSize = true;
-            this.CleanupCheckbox.Location = new System.Drawing.Point(216, 219);
+            this.CleanupCheckbox.Location = new System.Drawing.Point(164, 241);
             this.CleanupCheckbox.Name = "CleanupCheckbox";
             this.CleanupCheckbox.Size = new System.Drawing.Size(90, 17);
             this.CleanupCheckbox.TabIndex = 16;
@@ -203,7 +203,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(213, 203);
+            this.label3.Location = new System.Drawing.Point(162, 219);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(43, 13);
             this.label3.TabIndex = 17;
@@ -212,7 +212,7 @@
             // KeepOldArchivesCheckBox
             // 
             this.KeepOldArchivesCheckBox.AutoSize = true;
-            this.KeepOldArchivesCheckBox.Location = new System.Drawing.Point(216, 243);
+            this.KeepOldArchivesCheckBox.Location = new System.Drawing.Point(164, 265);
             this.KeepOldArchivesCheckBox.Name = "KeepOldArchivesCheckBox";
             this.KeepOldArchivesCheckBox.Size = new System.Drawing.Size(111, 17);
             this.KeepOldArchivesCheckBox.TabIndex = 18;
@@ -222,7 +222,7 @@
             // DeepSearchCheckbox
             // 
             this.DeepSearchCheckbox.AutoSize = true;
-            this.DeepSearchCheckbox.Location = new System.Drawing.Point(216, 266);
+            this.DeepSearchCheckbox.Location = new System.Drawing.Point(164, 288);
             this.DeepSearchCheckbox.Name = "DeepSearchCheckbox";
             this.DeepSearchCheckbox.Size = new System.Drawing.Size(89, 17);
             this.DeepSearchCheckbox.TabIndex = 19;
@@ -232,7 +232,7 @@
             // OutputPointersCheckbox
             // 
             this.OutputPointersCheckbox.AutoSize = true;
-            this.OutputPointersCheckbox.Location = new System.Drawing.Point(216, 290);
+            this.OutputPointersCheckbox.Location = new System.Drawing.Point(164, 311);
             this.OutputPointersCheckbox.Name = "OutputPointersCheckbox";
             this.OutputPointersCheckbox.Size = new System.Drawing.Size(99, 17);
             this.OutputPointersCheckbox.TabIndex = 20;
