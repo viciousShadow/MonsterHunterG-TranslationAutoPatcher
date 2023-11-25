@@ -44,9 +44,12 @@
             this.label1 = new System.Windows.Forms.Label();
             this.ImgBurnPathTextBox = new System.Windows.Forms.TextBox();
             this.LogLabel = new System.Windows.Forms.Label();
-            this.ArchiveListTextBox = new System.Windows.Forms.TextBox();
-            this.AFSFileLabel = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
+            this.CleanupCheckbox = new System.Windows.Forms.CheckBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.KeepOldArchivesCheckBox = new System.Windows.Forms.CheckBox();
+            this.DeepSearchCheckbox = new System.Windows.Forms.CheckBox();
+            this.OutputPointersCheckbox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // SelectFolderButton
@@ -104,9 +107,9 @@
             // 
             this.ApplyPatchButton.AutoSize = true;
             this.ApplyPatchButton.Enabled = false;
-            this.ApplyPatchButton.Location = new System.Drawing.Point(14, 271);
+            this.ApplyPatchButton.Location = new System.Drawing.Point(12, 203);
             this.ApplyPatchButton.Name = "ApplyPatchButton";
-            this.ApplyPatchButton.Size = new System.Drawing.Size(292, 57);
+            this.ApplyPatchButton.Size = new System.Drawing.Size(193, 125);
             this.ApplyPatchButton.TabIndex = 5;
             this.ApplyPatchButton.Text = "PATCH";
             this.ApplyPatchButton.UseVisualStyleBackColor = true;
@@ -178,25 +181,6 @@
             this.LogLabel.TabIndex = 12;
             this.LogLabel.Text = "output log";
             // 
-            // ArchiveListTextBox
-            // 
-            this.ArchiveListTextBox.Location = new System.Drawing.Point(14, 216);
-            this.ArchiveListTextBox.Multiline = true;
-            this.ArchiveListTextBox.Name = "ArchiveListTextBox";
-            this.ArchiveListTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.ArchiveListTextBox.Size = new System.Drawing.Size(292, 49);
-            this.ArchiveListTextBox.TabIndex = 13;
-            this.ArchiveListTextBox.Text = "AFS_DATA.AFS";
-            // 
-            // AFSFileLabel
-            // 
-            this.AFSFileLabel.AutoSize = true;
-            this.AFSFileLabel.Location = new System.Drawing.Point(17, 200);
-            this.AFSFileLabel.Name = "AFSFileLabel";
-            this.AFSFileLabel.Size = new System.Drawing.Size(196, 13);
-            this.AFSFileLabel.TabIndex = 14;
-            this.AFSFileLabel.Text = "Archives (comma separated, no spaces)";
-            // 
             // label2
             // 
             this.label2.AutoSize = true;
@@ -206,14 +190,66 @@
             this.label2.TabIndex = 15;
             this.label2.Text = "Patching progress";
             // 
+            // CleanupCheckbox
+            // 
+            this.CleanupCheckbox.AutoSize = true;
+            this.CleanupCheckbox.Location = new System.Drawing.Point(216, 219);
+            this.CleanupCheckbox.Name = "CleanupCheckbox";
+            this.CleanupCheckbox.Size = new System.Drawing.Size(90, 17);
+            this.CleanupCheckbox.TabIndex = 16;
+            this.CleanupCheckbox.Text = "Cleanup After";
+            this.CleanupCheckbox.UseVisualStyleBackColor = true;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(213, 203);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(43, 13);
+            this.label3.TabIndex = 17;
+            this.label3.Text = "Options";
+            // 
+            // KeepOldArchivesCheckBox
+            // 
+            this.KeepOldArchivesCheckBox.AutoSize = true;
+            this.KeepOldArchivesCheckBox.Location = new System.Drawing.Point(216, 243);
+            this.KeepOldArchivesCheckBox.Name = "KeepOldArchivesCheckBox";
+            this.KeepOldArchivesCheckBox.Size = new System.Drawing.Size(111, 17);
+            this.KeepOldArchivesCheckBox.TabIndex = 18;
+            this.KeepOldArchivesCheckBox.Text = "Keep old archives";
+            this.KeepOldArchivesCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // DeepSearchCheckbox
+            // 
+            this.DeepSearchCheckbox.AutoSize = true;
+            this.DeepSearchCheckbox.Location = new System.Drawing.Point(216, 266);
+            this.DeepSearchCheckbox.Name = "DeepSearchCheckbox";
+            this.DeepSearchCheckbox.Size = new System.Drawing.Size(89, 17);
+            this.DeepSearchCheckbox.TabIndex = 19;
+            this.DeepSearchCheckbox.Text = "Deep Search";
+            this.DeepSearchCheckbox.UseVisualStyleBackColor = true;
+            // 
+            // OutputPointersCheckbox
+            // 
+            this.OutputPointersCheckbox.AutoSize = true;
+            this.OutputPointersCheckbox.Location = new System.Drawing.Point(216, 290);
+            this.OutputPointersCheckbox.Name = "OutputPointersCheckbox";
+            this.OutputPointersCheckbox.Size = new System.Drawing.Size(99, 17);
+            this.OutputPointersCheckbox.TabIndex = 20;
+            this.OutputPointersCheckbox.Text = "Output Pointers";
+            this.OutputPointersCheckbox.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(324, 521);
+            this.Controls.Add(this.OutputPointersCheckbox);
+            this.Controls.Add(this.DeepSearchCheckbox);
+            this.Controls.Add(this.KeepOldArchivesCheckBox);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.CleanupCheckbox);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.AFSFileLabel);
-            this.Controls.Add(this.ArchiveListTextBox);
             this.Controls.Add(this.LogLabel);
             this.Controls.Add(this.ImgBurnPathTextBox);
             this.Controls.Add(this.label1);
@@ -256,9 +292,12 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox ImgBurnPathTextBox;
         private System.Windows.Forms.Label LogLabel;
-        private System.Windows.Forms.TextBox ArchiveListTextBox;
-        private System.Windows.Forms.Label AFSFileLabel;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.CheckBox CleanupCheckbox;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.CheckBox KeepOldArchivesCheckBox;
+        private System.Windows.Forms.CheckBox DeepSearchCheckbox;
+        private System.Windows.Forms.CheckBox OutputPointersCheckbox;
     }
 }
 

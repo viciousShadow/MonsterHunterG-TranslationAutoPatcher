@@ -14,23 +14,56 @@ namespace TestApp
         public Form1()
         {
             InitializeComponent();
+
+            Application.ThreadException += new System.Threading.ThreadExceptionEventHandler(Application_ThreadException);
         }
-        
+
+        //all the exception will be catched and handled in this delegated method.
+        private static void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
+        {
+            //log you error
+
+            var sb = new StringBuilder();
+            sb.AppendLine(e.Exception.Message);
+            sb.AppendLine(e.Exception.StackTrace);
+            var error = sb.ToString();
+
+            MessageBox.Show(error);
+            Console.WriteLine(error);
+
+            File.WriteAllText("error.txt", error);
+        }
+
         private void TryEnableApplyButton()
         {
             var input = SelectISOText.Text; 
             var output = OutputFileText.Text;
             var patchData = PatchFileData.Text;
             var imgBurnPath = ImgBurnPathTextBox.Text;
-            var archiveList = ArchiveListTextBox.Text;
 
-            var ready = !string.IsNullOrEmpty(input) 
-                && !string.IsNullOrEmpty(output) 
+            var ready = !string.IsNullOrEmpty(input)
+                && !string.IsNullOrEmpty(output)
                 && !string.IsNullOrEmpty(patchData)
-                && !string.IsNullOrEmpty(imgBurnPath)
-                && !string.IsNullOrEmpty(archiveList);
+                && !string.IsNullOrEmpty(imgBurnPath);
 
             ApplyPatchButton.Enabled = ready; 
+        }
+
+        private void EnableAllOptions(bool enable)
+        {
+            ApplyPatchButton.Enabled = enable;
+
+            SelectFolderButton.Enabled = enable;
+            OutputFileButton.Enabled = enable;
+            SelectISOText.Enabled = enable;
+            OutputFileText.Enabled = enable;
+            PatchFileData.Enabled = enable;
+            ImgBurnPathTextBox.Enabled = enable;
+            SelectPatchFileButton.Enabled = enable;
+            CleanupCheckbox.Enabled = enable; 
+            KeepOldArchivesCheckBox.Enabled = enable;
+            DeepSearchCheckbox.Enabled = enable;
+            OutputPointersCheckbox.Enabled = enable;
         }
         
         private class TempFileMetadata
@@ -44,7 +77,92 @@ namespace TestApp
             public bool reinjected;
         }
 
-        private void DoApplyPatchISO(string inputFile, string outputFile, string patchData, string archiveData)
+        private Dictionary<string, List<string>> GetArchivePatchInfo(string[] patches)
+        {
+            var patchingFiles = new Dictionary<string, List<string>>();
+
+            // var deepSearch = DeepSearchCheckbox.Checked;
+            // if (deepSearch)
+            // {
+            //     var archives = archiveData.Split(',');
+            //     foreach (var archive in archives)
+            //     {
+            //         var fileList = new List<string>();
+            //         fileList.Add("sub_main.bin");
+            // 
+            //         patchingFiles.Add(archive, fileList);
+            //     }
+            // }
+
+            for (var i = 0; i < patches.Length; ++i)
+            {
+                var patch = patches[i].Split(',');
+
+                // ignore any lines without enough info 
+                if(patch == null || patch.Length < 5)
+                {
+                    continue; 
+                }
+
+                var patchArchive = patch[4];
+                var patchFile = patch[5];
+                
+                // ignore null info 
+                if (string.IsNullOrEmpty(patchArchive) || string.IsNullOrEmpty(patchFile))
+                {
+                    continue;
+                }
+
+                List<string> fileList;
+                var found = patchingFiles.TryGetValue(patchArchive, out fileList);
+
+                if (!found)
+                {
+                    fileList = new List<string>();
+                    patchingFiles.Add(patchArchive, fileList);
+                }
+
+                if (!fileList.Contains(patchFile))
+                {
+                    fileList.Add(patchFile);
+                }
+            }
+
+            return patchingFiles;
+        }
+
+        private void RecursivelyDeleteDirectory(string directory)
+        {
+            if (!Directory.Exists(directory))
+            {
+                return; 
+            }
+
+            try
+            {
+                var childDirectories = Directory.GetDirectories(directory);
+                foreach(var childDirectory in childDirectories)
+                {
+                    RecursivelyDeleteDirectory(childDirectory); 
+                }
+
+                var files = Directory.GetFiles(directory);
+                foreach(var file in files)
+                {
+                    File.Delete(file);
+                }
+
+                Directory.Delete(directory); 
+            }
+            catch(System.Exception e)
+            {
+                Log(e.StackTrace);
+                Log(e.Message);
+                Log($"Failed to delete {directory}");
+            }
+        }
+
+        private void DoApplyPatchISO(string inputFile, string outputFile, string patchData)
         {
             var patches = GetPatches(patchData);
 
@@ -52,47 +170,39 @@ namespace TestApp
 
             var tempFolder = "./temp";
             var tempFolderAFS = "./tempAFS";
+            var deepSearch = DeepSearchCheckbox.Checked;
 
-            if (!Directory.Exists(tempFolder))
-            {
-                Directory.CreateDirectory(tempFolder);
-            }
+            // cleanup previous work 
+            RecursivelyDeleteDirectory(tempFolder);
+            RecursivelyDeleteDirectory(tempFolderAFS);
 
-            if (!Directory.Exists(tempFolderAFS))
-            {
-                Directory.CreateDirectory(tempFolderAFS);
-            }
+            // prepare directories 
+            Directory.CreateDirectory(tempFolder);
+            Directory.CreateDirectory(tempFolderAFS);
             
             var volumeLabel = string.Empty;
             ExtractISO(inputFile, tempFolder, out volumeLabel);
             volumeLabel += "_PATCHED";
 
             // which archive files contain the bin files we care about? 
-            var patchingFiles = new Dictionary<string, List<string>>();
+            var patchingFiles = GetArchivePatchInfo(patches); 
 
-            var archives = archiveData.Split(',');
-            foreach(var archive in archives)
-            {
-                var fileList = new List<string>();
-                fileList.Add("sub_main.bin"); 
-
-                patchingFiles.Add(archive, fileList);
-            }
-
-            // previously hard coded 
-            //patchingFiles.Add("AFS_DATA.AFS", new List<string>() { ".bin" });
-            
-            foreach(var entry in patchingFiles)
+            // loop through, unpacking and repacking the archives as we go
+            foreach (var entry in patchingFiles)
             {
                 var unpackAFS = entry.Key;
                 var unpackExtensions = entry.Value;
 
-                var inputDataFile = string.Format("{0}/{1}", tempFolder, unpackAFS);
-                var outputDataFolder = string.Format("{0}/{1}", tempFolderAFS, unpackAFS);
+                var inputArchiveFile = string.Format("{0}/{1}", tempFolder, unpackAFS);
+                var outputArchiveFolder = string.Format("{0}/{1}", tempFolderAFS, unpackAFS);
 
-                var archive = ExtractFromAFS(inputDataFile, outputDataFolder);
-
-
+                var archive = ExtractFromAFS(inputArchiveFile, outputArchiveFolder);
+                if(archive == null)
+                {
+                    Log($"Couldn't find {inputArchiveFile}");
+                    continue; 
+                }
+                
                 // search for any archived files with the extensions we care about 
                 var unpackFiles = new List<string>(); 
                 for(var d = 0; d < archive.directory.Length; ++d)
@@ -102,7 +212,9 @@ namespace TestApp
                     for(var e = 0; e < unpackExtensions.Count; ++e)
                     {
                         var extension = unpackExtensions[e];
-                        if (dir_entry.filename.Contains(extension)) // not exactly strict
+
+                        // not exactly strict
+                        if (deepSearch || dir_entry.filename.Contains(extension)) 
                         {
                             unpackFiles.Add(dir_entry.filename);
                             break;
@@ -112,28 +224,28 @@ namespace TestApp
                 
                 // uncompress, patch, recompress, reinject into AFS instance 
                 var metadata = new List<TempFileMetadata>();
-
+                
                 // update progress bar 
                 var max_progress = unpackFiles.Count * 3;
                 var cur_progress = 0;
-
+                
                 // uncompress 
                 Log("Decompressing packed files.");
-
+                
                 for(var i = 0; i < unpackFiles.Count; ++i)
                 {
                     UpdateProress(cur_progress, 0, max_progress);
                     cur_progress += 1;
-
+                
                     var unpackFile = unpackFiles[i];
-                    var targetFilenameFull = string.Format("{0}/{1}", outputDataFolder, unpackFile);
+                    var targetFilenameFull = string.Format("{0}/{1}", outputArchiveFolder, unpackFile);
                     var targetFilenameUnpackedFull = $"{targetFilenameFull}.unpacked";
                     
                     var meta = new TempFileMetadata();
                     meta.originalFilename = targetFilenameFull;
                     meta.unpackedFilename = targetFilenameUnpackedFull;
                     metadata.Add(meta);
-
+                
                     meta.uncompressed = UnpackAFS_File(targetFilenameFull);
                     if (!meta.uncompressed)
                     {
@@ -141,34 +253,33 @@ namespace TestApp
                         continue; 
                     }
                 }
-
+                
                 Log("Patching uncompressed files.");
                 for (var i = 0; i < unpackFiles.Count; ++i)
                 {
                     UpdateProress(cur_progress, 0, max_progress);
                     cur_progress += 1;
-
+                
                     var unpackFile = unpackFiles[i];
                     var meta = metadata[i];
-
+                
                     if (!meta.uncompressed)
                     {
                         continue;
                     }
-
+                
                     meta.patched = PatchFile(meta.unpackedFilename, patches);
-                    
                 }
-
+                
                 Log("Recompressing patched files. This may take awhile.");
                 for (var i = 0; i < unpackFiles.Count; ++i)
                 {
                     UpdateProress(cur_progress, 0, max_progress);
                     cur_progress += 1;
-
+                
                     var unpackFile = unpackFiles[i];
                     var meta = metadata[i];
-
+                
                     if (!meta.uncompressed || !meta.patched)
                     {
                         continue;
@@ -180,7 +291,7 @@ namespace TestApp
                         Log($"Failed to recompressed {meta.originalFilename}! Did crappack fail?");
                         continue;
                     }
-
+                
                     meta.reinjected = ReinjectInAFS(archive, meta.originalFilename);
                     if (!meta.reinjected)
                     {
@@ -188,16 +299,30 @@ namespace TestApp
                         continue; 
                     }
                 }
-
-                Log("Cloning previous AFS.");
-                CloneOldAFS(inputDataFile); // for reference (note: unless deleted it will get put into the ISO) 
-
+                
+                // possibly keep for reference 
+                // note: unless deleted it will get put into the ISO
+                var keepOldArchives = KeepOldArchivesCheckBox.Checked;
+                if (keepOldArchives)
+                {
+                    Log("Cloning previous AFS.");
+                    CloneOldAFS(inputArchiveFile); 
+                }
+                
                 Log("Rebuilding fresh AFS.");
-                RebuildAFS(archive, inputDataFile); // rebuilds from scratch, using the modified instance 
+                RebuildAFS(archive, inputArchiveFile); // rebuilds from scratch, using the modified instance 
             }
-
+            
             Log("Rebuilding fresh ISO.");
             RepackISO(tempFolder, outputFile, volumeLabel); 
+
+            // if checked, delete all the temp stuff we made
+            var cleanup = CleanupCheckbox.Checked;
+            if (cleanup)
+            {
+                RecursivelyDeleteDirectory(tempFolder);
+                RecursivelyDeleteDirectory(tempFolderAFS);
+            }
         }
         
         private void ExtractISO(string inputFile, string outputFolder, out string volumeLabel)
@@ -228,12 +353,7 @@ namespace TestApp
             foreach(var cd_file in cd_files)
             {
                 var fileStream = cd.OpenFile(cd_file, FileMode.Open);
-
-                var attributes = cd.GetAttributes(cd_file);
-
-
                 var real_file = string.Format("{0}/{1}", outputFolder, cd_file);
-
                 Log($"extracting {cd_file} to {real_file}");
 
                 using (var writerStream = File.OpenWrite(real_file))
@@ -321,6 +441,11 @@ namespace TestApp
         
         private AFS ExtractFromAFS(string input, string output)
         {
+            if (!File.Exists(input))
+            {
+                return null; 
+            }
+
             using (var reader = File.OpenRead(input))
             {
                 var archive = AFS.FromStream(reader);
@@ -341,6 +466,7 @@ namespace TestApp
                     var file = archive.files[i];
 
                     var fullFilename = string.Format("{0}/{1}", output, directory_entry.filename);
+                    // Log($"Extracting \"{fullFilename}\" from archive.");
 
                     using (var writer = File.OpenWrite(fullFilename))
                     {
@@ -465,9 +591,18 @@ namespace TestApp
 
         private string[] GetPatches(string patchData)
         {
+            var patches0 = patchData.Split('\n');
+
             // skip first line, its the header info 
-            var patches = patchData.Split('\n');
-            patches = patches.OrderByDescending((a) => a.Length).ToArray();
+            var patches1 = new string[patches0.Length - 1];
+            for(var i = 0; i < patches1.Length; ++i)
+            {
+                patches1[i] = patches0[i + 1]; 
+            }
+            
+            // order by longest raw name first, so we don't accidentally replace 
+            // a smaller string within a bigger one
+            var patches = patches1.OrderByDescending((a) => a.Length).ToArray();
             return patches;
         }
 
@@ -514,6 +649,39 @@ namespace TestApp
             return found;
         }
 
+        private uint findPointerPosition(byte[] buffer, uint position)
+        {
+            var pointerBuffer = new byte[4]; // are the pointers 4 bytes?
+            BinaryHelper.WriteUInt32(pointerBuffer,  position);
+
+            // assuming the pointer is behind the actual string
+            for (var b = 0; b < buffer.Length - pointerBuffer.Length; ++b)
+            {
+                var match = true;
+                for (var r = 0; r < pointerBuffer.Length; ++r)
+                {
+                    if (buffer[b + r] != pointerBuffer[r])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    return (uint) b; 
+                }
+            }
+
+            return 0; 
+        }
+
+        private struct PatchPointerPair
+        {
+            public uint referencedAtPosition;
+            public uint pointer; 
+        }
+
         private bool PatchFile(string file, string[] patches)
         {
             var found = false;
@@ -526,6 +694,8 @@ namespace TestApp
                 Log($"Couldn't find {file}. Did crappack fail to pack?");
                 return false; 
             }
+
+            var pointers = new Dictionary<string, PatchPointerPair>();
 
             using (var reader = File.OpenRead(file))
             {
@@ -550,12 +720,20 @@ namespace TestApp
 
                     var original = data[0];
                     var translation = data[2];
+                    var groupOffset = data[6]; 
 
                     if(string.IsNullOrEmpty(original) || string.IsNullOrEmpty(translation))
                     {
                         continue; 
                     }
-                    
+
+                    // 🔪 live on the edge 🔪
+                    // don't do anything dangerous 
+                    if(original.Length < 2)
+                    {
+                        continue; 
+                    }
+
                     // enforce the translation to equal the number of bytes we're patching 
                     var encoding = Encoding.GetEncoding("shift_jis");
                     var searchTerm = encoding.GetBytes(original);
@@ -566,6 +744,7 @@ namespace TestApp
                     var original_padding = chunk_size - searchTerm.Length % chunk_size;
                     var original_full_length = searchTerm.Length + original_padding; 
 
+                    // resize
                     if (original_full_length != patch.Length)
                     {
                         var paddedTranslation = new byte[searchTerm.Length];
@@ -584,6 +763,7 @@ namespace TestApp
                         patch = paddedTranslation;
                     }
                     
+                    // find match 
                     for (var b = 0; b < buffer.Length - searchTerm.Length; ++b)
                     {
                         var match = true;
@@ -601,6 +781,20 @@ namespace TestApp
                             continue;
                         }
 
+                        // match found, note the position and try to find it's pointer?!
+                        var pointerPosition = findPointerPosition(buffer, (uint) b); 
+                        if(pointerPosition > 0)
+                        {
+                            // 💦
+                            if (!pointers.ContainsKey(original))
+                            {
+                                pointers.Add(original, new PatchPointerPair() {
+                                    referencedAtPosition = pointerPosition,
+                                    pointer = (uint) b
+                                }); 
+                            }
+                        }
+
                         // match found, replace!
                         for (var r = 0; r < searchTerm.Length; ++r)
                         {
@@ -610,7 +804,7 @@ namespace TestApp
                         replaced_count += 1;
                     }
                 }
-
+                
                 found = replaced_count > 0;
             }
 
@@ -628,12 +822,53 @@ namespace TestApp
                 
             }
 
-            if(replaced_count > 0)
+            if (OutputPointersCheckbox.Checked)
+            {
+                var sb = new StringBuilder();
+                foreach (var pointer in pointers)
+                {
+                    var pointerPair = pointer.Value;
+                    var referenceHex = pointerPair.referencedAtPosition.ToString("X8");
+                    var pointerHex = pointerPair.pointer.ToString("X8");
+
+                    sb.AppendLine($"{pointer.Key} => pointer: 0x{pointerHex} referenced at 0x{referenceHex}"); 
+                }
+
+                if(pointers.Count > 0)
+                {
+                    Log($"Pointers found: \n\r{sb.ToString()}");
+                }
+            }
+
+            if (replaced_count > 0)
             {
                 Log($"Updated {replaced_count} strings in \"{file}\"!");
             }
 
             return found; 
+        }
+
+
+        private struct RepointerPatch
+        {
+            public byte[] OldString;
+            public byte[] NewString;
+        
+            public uint GroupStartOffset;
+            public uint GroupRelativeOffset;
+        
+        }
+
+        private class PatchGroupPointers
+        {
+
+
+
+        }
+
+        private void PatchFileWithRepointer(string file, string[] patches)
+        {
+
         }
 
         public void Log(string value)
@@ -722,33 +957,37 @@ namespace TestApp
             var inputFile = SelectISOText.Text;
             var outputPath = OutputFileText.Text;
             var patchData = PatchFileData.Text;
-            var archiveData = ArchiveListTextBox.Text;
-
-            // todo 
-            // skip first line, its the header info 
-            PatchProgressBar.Minimum = 0;
-            PatchProgressBar.Maximum = patchData.Split('\n').Length; // * AddFileCounter(inputFile);
+            
+            UpdateProress(0, 0, 100); 
 
             OutputFileButton.Enabled = false;
             SelectFolderButton.Enabled = false;
             ApplyPatchButton.Enabled = false;
 
-            PatchProgressBar.Value = 0;
+            EnableAllOptions(false); 
 
             var thread = new System.Threading.Thread(() =>
             {
-                Log("STARTING! Go grab some coffee.");
+                try
+                {
+                    Log("STARTING! Go grab some coffee.");
 
-                DoApplyPatchISO(inputFile, outputPath, patchData, archiveData);
+                    DoApplyPatchISO(inputFile, outputPath, patchData);
                 
-                Log("FINISHED! Was it worth the wait?");
+                    Log("FINISHED! Was it worth the wait?");
+                }
+                catch(Exception error)
+                {
+                    Log(error.StackTrace);
+                    Log(error.Message);
+
+                    Log("ERROR! Failed to patch.");
+                }
 
                 // run on main thread 
                 this.Invoke(new Action(() =>
                 {
-                    ApplyPatchButton.Enabled = true;
-                    OutputFileButton.Enabled = true;
-                    SelectFolderButton.Enabled = true;
+                    EnableAllOptions(true);
                     PatchProgressBar.Value = PatchProgressBar.Maximum;
                 }));
             });
@@ -765,8 +1004,11 @@ namespace TestApp
             SelectPatchFileDialog.ShowDialog();
 
             var patchFilePath = SelectPatchFileDialog.FileName;
-            var patchData = System.IO.File.ReadAllText(patchFilePath);
-            PatchFileData.Text = patchData;
+            if (!string.IsNullOrEmpty(patchFilePath))
+            {
+                var patchData = System.IO.File.ReadAllText(patchFilePath);
+                PatchFileData.Text = patchData;
+            }
 
             TryEnableApplyButton();
         }

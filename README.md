@@ -1,6 +1,9 @@
 ﻿# What is this?!
 This is a language patcher for Monter Hunter G (PS2)! The tool dumps the ISO to disk, unpacks the archive files, decompresses those files, patches them, recompresses those files, repacks the archive files, then rebuilds a bootable ISO! 
 
+## Download
+  - https://github.com/coty-crg/MonsterHunterG-TranslationAutoPatcher/releases
+  
 ### Run Requirements: 
   - Python: https://www.python.org/downloads/release/python-2717/ - when installing, check on "Add to PATH" at the bottom!
   - Imgburn: http://download.imgburn.com/SetupImgBurn_2.5.8.0.exe 
@@ -35,9 +38,12 @@ I had to figure out the AFS format. Here's what I discovered..
       - Data length (4 bytes, uint32)
     - Directory's offset (4 bytes, uint32)
     - Directory's length (4 bytes, uint32)
+
+*NOTE: The whole table of contents is inside a 512 KB buffer, with the last 8 bytes being the directory offset and length. Everything in between needs to be padded out. *
+
   - Data (this is another list, size equaling the numer of files above, containing the files themselves)
-    - Note: The data is padded to the nearest 2048th byte with 0s.
-  - File Directory (this is another list, size equaling the number of files above. After the last file, it is also padded to the nearest 2048th byte)
+    - Note: The data is padded to the nearest 2048th byte with 0s PER FILE.
+  - File Directory (this is another list, size equaling the number of files above. After the last file, it is also padded to the nearest 2048th byte AT THE END OF THE WHOLE DIRECTORY)
     - Filename (32 bytes, terminated and padded with 0s)
     - Year (2 bytes, uint16)
     - Month (2 bytes, uint16)
@@ -52,5 +58,5 @@ The files (and archives themselves) for MHG are using SHIFT_JIS encoding. All of
 
 ### Credits:
 - Patcher by Coty: https://twitter.com/cotycrg
-- Translations by Dixdros (Dixdros#0268) and vicious (viciousShadow#5130) (nice job, guys!)
+- Translations by Dixdros and viciousShadow (nice job, guys!)
 - Compression algorithm perfected by the_fog (thanks!)
